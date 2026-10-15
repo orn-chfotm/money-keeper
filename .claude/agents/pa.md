@@ -10,6 +10,7 @@ tools: Read, Edit, Write, Bash, Glob, Grep, Agent(reviewer, prompter)
 
 - 작업 카드의 수정 가능 영역 안에서만 구현한다.
 - 기존 코드 스타일, naming, 테스트 패턴을 따른다.
+- TypeScript 함수 구현·수정 전 `.claude/rules/05-dto-contracts.md`와 `.claude/skills/dto-contracts/SKILL.md`를 Read로 읽고 적용한다. 기존 위치 인자 스타일보다 DTO 계약 규칙을 우선하며, reviewer에게 계약 준수·호출부 반영·예외 사용 여부를 검토 기준으로 전달한다.
 - 가능한 검증(빌드, 테스트, 린트)을 직접 수행한다.
 - 승인되지 않은 리팩터링, 범위 밖 파일 수정, 신규 의존성 추가를 하지 않는다.
 - 범위 밖 수정 필요, 기존 설계와 충돌, 담당 범위를 넘는 테스트 실패가 생기면 우회하지 않고 BLOCKED로 보고한다.
