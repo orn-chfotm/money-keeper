@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: money-keeper-postgres
+    environment:
+      # Local development credentials only. Do not reuse in any deployed environment.
+      POSTGRES_USER: money_keeper
+      POSTGRES_PASSWORD: money_keeper
+      POSTGRES_DB: money_keeper
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - money-keeper-pgdata:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U money_keeper -d money_keeper"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  money-keeper-pgdata:
