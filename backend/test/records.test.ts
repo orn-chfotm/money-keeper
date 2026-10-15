@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app.js";
@@ -10,6 +11,7 @@ type RecordBody = {
   kind: string;
   incomeType?: string | null;
   amount: unknown;
+  title?: unknown;
   memo?: string;
 };
 
@@ -18,6 +20,7 @@ const expense: RecordBody = {
   kind: "expense",
   incomeType: null,
   amount: 12000,
+  title: "Lunch",
   memo: "lunch",
 };
 
@@ -48,10 +51,38 @@ afterEach(() => {
 describe("POST /records", () => {
   it("creates all four record types and returns them via GET", async () => {
     const bodies: RecordBody[] = [
-      { date: "2026-03-01", kind: "income", incomeType: "salary", amount: 3_000_000, memo: "pay" },
-      { date: "2026-03-02", kind: "income", incomeType: "other", amount: 50_000, memo: "" },
-      { date: "2026-03-03", kind: "expense", incomeType: null, amount: 8_000, memo: "coffee" },
-      { date: "2026-03-04", kind: "saving", incomeType: null, amount: 500_000, memo: "fund" },
+      {
+        date: "2026-03-01",
+        kind: "income",
+        incomeType: "salary",
+        amount: 3_000_000,
+        title: "Salary",
+        memo: "pay",
+      },
+      {
+        date: "2026-03-02",
+        kind: "income",
+        incomeType: "other",
+        amount: 50_000,
+        title: "Bonus",
+        memo: "",
+      },
+      {
+        date: "2026-03-03",
+        kind: "expense",
+        incomeType: null,
+        amount: 8_000,
+        title: "Coffee",
+        memo: "coffee",
+      },
+      {
+        date: "2026-03-04",
+        kind: "saving",
+        incomeType: null,
+        amount: 500_000,
+        title: "Fund",
+        memo: "fund",
+      },
     ];
 
     const created = [];
@@ -64,18 +95,18 @@ describe("POST /records", () => {
 
     const res = await list("2026-03-01", "2026-03-31");
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ items: [...created].reverse() });
+    expect(res.body).toEqual({ items: created });
   });
 
   it("returns exactly the camelCase DTO keys", async () => {
     const record = await create(expense);
     expect(Object.keys(record).sort()).toEqual(
-      ["amount", "date", "id", "incomeType", "kind", "memo"].sort(),
+      ["amount", "date", "id", "incomeType", "kind", "memo", "title"].sort(),
     );
   });
 
   it("defaults memo to an empty string and incomeType to null", async () => {
-    const res = await post({ date: "2026-03-15", kind: "saving", amount: 1000 });
+    const res = await post({ date: "2026-03-15", kind: "saving", amount: 1000, title: "Fund" });
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ incomeType: null, memo: "" });
   });
@@ -130,6 +161,61 @@ describe("POST /records", () => {
     expect(accepted.body.memo).toBe("가".repeat(200));
   });
 
+  it("rejects a missing title", async () => {
+    const { title: _omitted, ...withoutTitle } = expense;
+    const res = await post(withoutTitle);
+    expectValidationError(res, "title");
+  });
+
+  it.each(["", "   ", "\t\n ", "a".repeat(51), "가".repeat(51), null, 123])(
+    "rejects title %j",
+    async (title) => {
+      const res = await post({ ...expense, title });
+      expectValidationError(res, "title");
+    },
+  );
+
+  it("stores the trimmed title", async () => {
+    const res = await post({ ...expense, title: "  Lunch with team  " });
+    expect(res.status).toBe(201);
+    expect(res.body.title).toBe("Lunch with team");
+
+    const listed = await list("2026-03-01", "2026-03-31");
+    expect(listed.body.items[0].title).toBe("Lunch with team");
+  });
+
+  it("accepts a 50-character title counted by code points", async () => {
+    const emojiTitle = "😀".repeat(50);
+    const accepted = await post({ ...expense, title: emojiTitle });
+    expect(accepted.status).toBe(201);
+    expect(accepted.body.title).toBe(emojiTitle);
+
+    const trimmedTo50 = await post({ ...expense, title: ` ${"a".repeat(50)} ` });
+    expect(trimmedTo50.status).toBe(201);
+    expect(trimmedTo50.body.title).toBe("a".repeat(50));
+  });
+
+  it.each(["", "   ", "a".repeat(51)])(
+    "rejects title %j at the database CHECK constraint",
+    async (title) => {
+      await expect(
+        db.execute(
+          sql`INSERT INTO records (date, kind, income_type, amount, title, memo)
+              VALUES ('2026-03-15', 'expense', NULL, 1000, ${title}, '')`,
+        ),
+      ).rejects.toMatchObject({ cause: { constraint: "records_title_check" } });
+    },
+  );
+
+  it("rejects a NULL title at the database", async () => {
+    await expect(
+      db.execute(
+        sql`INSERT INTO records (date, kind, income_type, amount, memo)
+            VALUES ('2026-03-15', 'expense', NULL, 1000, '')`,
+      ),
+    ).rejects.toMatchObject({ cause: { code: "23502", column: "title" } });
+  });
+
   it("returns BAD_REQUEST for malformed JSON", async () => {
     const res = await request(app)
       .post("/records")
@@ -154,8 +240,8 @@ describe("GET /records", () => {
     }
     const res = await list("2026-01-01", "2026-12-31");
     expect(res.body.items.map((item: RecordBody) => item.date)).toEqual([
-      "2026-12-31",
       "2026-01-01",
+      "2026-12-31",
     ]);
   });
 
@@ -166,19 +252,19 @@ describe("GET /records", () => {
     const res = await list("2026-03-01", "2026-03-31");
     expect(res.status).toBe(200);
     expect(res.body.items.map((item: RecordBody) => item.date)).toEqual([
-      "2026-03-31",
       "2026-03-01",
+      "2026-03-31",
     ]);
   });
 
-  it("sorts by date DESC, then id DESC", async () => {
+  it("sorts by date ASC, then id ASC (registration order within a day)", async () => {
     const a = await create({ ...expense, date: "2026-03-10" });
     const b = await create({ ...expense, date: "2026-03-20" });
     const c = await create({ ...expense, date: "2026-03-10" });
     const d = await create({ ...expense, date: "2026-03-05" });
 
     const res = await list("2026-03-01", "2026-03-31");
-    expect(res.body.items.map((item: { id: number }) => item.id)).toEqual([b.id, c.id, a.id, d.id]);
+    expect(res.body.items.map((item: { id: number }) => item.id)).toEqual([d.id, a.id, c.id, b.id]);
   });
 
   it("returns an empty list when nothing matches", async () => {
@@ -224,6 +310,7 @@ describe("PUT /records/:id", () => {
       kind: "income",
       incomeType: "other",
       amount: 7000,
+      title: "Refund",
       memo: "refund",
     };
 
@@ -254,6 +341,20 @@ describe("PUT /records/:id", () => {
       .put(`/records/${record.id}`)
       .send({ ...expense, amount: 0 });
     expectValidationError(res, "amount");
+
+    const blankTitle = await request(app)
+      .put(`/records/${record.id}`)
+      .send({ ...expense, title: "  " });
+    expectValidationError(blankTitle, "title");
+  });
+
+  it("stores the trimmed title on update", async () => {
+    const record = await create(expense);
+    const res = await request(app)
+      .put(`/records/${record.id}`)
+      .send({ ...expense, title: "  Dinner  " });
+    expect(res.status).toBe(200);
+    expect(res.body.title).toBe("Dinner");
   });
 
   it("returns 404 for a non-existent id", async () => {

@@ -1,11 +1,11 @@
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { records } from "../db/schema.js";
 
 export type RecordRow = typeof records.$inferSelect;
 export type RecordValues = Pick<
   typeof records.$inferInsert,
-  "date" | "kind" | "incomeType" | "amount" | "memo"
+  "date" | "kind" | "incomeType" | "amount" | "title" | "memo"
 >;
 
 export async function findRecordsByDateRange(from: string, to: string): Promise<RecordRow[]> {
@@ -13,7 +13,7 @@ export async function findRecordsByDateRange(from: string, to: string): Promise<
     .select()
     .from(records)
     .where(and(gte(records.date, from), lte(records.date, to)))
-    .orderBy(desc(records.date), desc(records.id));
+    .orderBy(asc(records.date), asc(records.id));
 }
 
 export async function insertRecord(values: RecordValues): Promise<RecordRow> {

@@ -1,5 +1,5 @@
 ---
-description: "2단계 보완 계획: 월 달력 화면과 기록 제목(title) 추가 (승인 대기)"
+description: "2단계 보완 계획: 월 달력 화면과 기록 제목(title) 추가 (승인)"
 ---
 
 # money-keeper 2단계 보완 — 월 달력 화면 + 기록 제목(title)
@@ -127,3 +127,21 @@ description: "2단계 보완 계획: 월 달력 화면과 기록 제목(title) �
    - 새로고침 후 유지
    - 좁은 화면 표시
    - AlertDialog와 RadioGroup 스타일(shadcn CSS 일부 인라인 리스크)
+
+## 승인 시 추가 지시 (2026-10-15 승인)
+- 마이그레이션 전 개발 DB `records`가 0건인지 확인한다.
+- `RecordValues` 타입에 `title`을 추가한다(`records-service.ts`도 확인).
+- 달력 칸 제목 10자 말줄임은 코드포인트 기준으로 자른다.
+- `utils.ts`를 clsx + tailwind-merge로 바꾼 뒤 shadcn dialog를 추가한다.
+- PA-1·PA-2 병렬 실행을 승인했다.
+- 새로 만들거나 시그니처를 바꾸는 함수는 `05-dto-contracts.md`를 따른다.
+- 수정하는 MD는 마지막 섹션을 `## [금지사항]`으로 둔다.
+
+## [금지사항]
+- 금지사항을 위반한 소스는 반드시 수정하고 재검증한다. 위반 상태의 구현과 금지 예시는 실제 소스 및 최종 반영 대상에 포함하지 않는다.
+- 마이그레이션 `0000`을 수정하지 않는다. title 컬럼에 DEFAULT를 두지 않는다.
+- 개발 DB에 기록이 있는 상태에서 `db:migrate`를 강행하지 않는다.
+- 일별·월 합계(3단계), 반복 등록(5단계)을 이번 범위에 넣지 않는다.
+- FE에서 합계를 계산하지 않는다.
+- PL/PA가 `.claude/`, `.ai/`, `.ai-prompts/`, `.idea/`를 수정하거나 git commit을 하지 않는다.
+- reviewer PASS 없이 PA 산출물을 통합하지 않는다.

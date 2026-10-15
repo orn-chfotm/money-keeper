@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { isValidDate, monthOfDate, monthRange, shiftMonth, todayKst } from "./date";
+import {
+  buildMonthGrid,
+  isValidDate,
+  monthOfDate,
+  monthRange,
+  shiftMonth,
+  todayKst,
+} from "./date";
 
 describe("todayKst", () => {
   it("returns the KST date even when the UTC date is still the previous day", () => {
@@ -53,5 +60,59 @@ describe("monthRange", () => {
       to: "2027-02-28",
     });
     expect(monthRange({ year: 2028, month: 2 }).to).toBe("2028-02-29");
+  });
+});
+
+describe("buildMonthGrid", () => {
+  function dates(weeks: { date: string }[][]): string[] {
+    return weeks.flat().map((cell) => cell.date);
+  }
+
+  it("builds Sunday-first weeks with padding for 2026-10", () => {
+    const { weeks } = buildMonthGrid({ year: 2026, month: 10 });
+    expect(weeks).toHaveLength(5);
+    expect(weeks.every((week) => week.length === 7)).toBe(true);
+    // 2026-10-01 is a Thursday, so Sun-Wed come from September.
+    expect(weeks[0].map((cell) => cell.date)).toEqual([
+      "2026-09-27",
+      "2026-09-28",
+      "2026-09-29",
+      "2026-09-30",
+      "2026-10-01",
+      "2026-10-02",
+      "2026-10-03",
+    ]);
+    expect(weeks[0].map((cell) => cell.inMonth)).toEqual([false, false, false, false, true, true, true]);
+    expect(weeks[4][6]).toEqual({ date: "2026-10-31", day: 31, inMonth: true });
+    expect(weeks.flat().filter((cell) => cell.inMonth)).toHaveLength(31);
+  });
+
+  it("fills exactly four weeks for 2026-02 (starts on Sunday, 28 days)", () => {
+    const { weeks } = buildMonthGrid({ year: 2026, month: 2 });
+    expect(weeks).toHaveLength(4);
+    expect(weeks[0][0]).toEqual({ date: "2026-02-01", day: 1, inMonth: true });
+    expect(weeks[3][6]).toEqual({ date: "2026-02-28", day: 28, inMonth: true });
+    expect(weeks.flat().every((cell) => cell.inMonth)).toBe(true);
+  });
+
+  it("starts without leading padding for a Sunday-start month (2026-03) and pads the end", () => {
+    const { weeks } = buildMonthGrid({ year: 2026, month: 3 });
+    expect(weeks).toHaveLength(5);
+    expect(weeks[0][0]).toEqual({ date: "2026-03-01", day: 1, inMonth: true });
+    expect(dates(weeks).slice(-5)).toEqual([
+      "2026-03-31",
+      "2026-04-01",
+      "2026-04-02",
+      "2026-04-03",
+      "2026-04-04",
+    ]);
+    expect(weeks[4].map((cell) => cell.inMonth)).toEqual([true, true, true, false, false, false, false]);
+  });
+
+  it("crosses year boundaries in the padding", () => {
+    const { weeks } = buildMonthGrid({ year: 2027, month: 1 });
+    // 2027-01-01 is a Friday.
+    expect(weeks[0][0].date).toBe("2026-12-27");
+    expect(weeks[0][5]).toEqual({ date: "2027-01-01", day: 1, inMonth: true });
   });
 });
