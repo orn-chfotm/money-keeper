@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
-import { INCOME_TYPES, MAX_AMOUNT, MAX_MEMO_LENGTH, RECORD_KINDS } from "../db/schema.js";
+import {
+  INCOME_TYPES,
+  MAX_AMOUNT,
+  MAX_MEMO_LENGTH,
+  MAX_TITLE_LENGTH,
+  RECORD_KINDS,
+} from "../db/schema.js";
 import { daysBetween, isValidDate } from "../domain/date.js";
 import { notFound } from "../errors.js";
 import type { RecordRow } from "../repositories/records-repository.js";
@@ -22,6 +28,15 @@ const recordInputSchema = z
     kind: z.enum(RECORD_KINDS),
     incomeType: z.enum(INCOME_TYPES).nullable().default(null),
     amount: z.number().int().positive().max(MAX_AMOUNT),
+    // Stored trimmed. Count code points to match PostgreSQL char_length.
+    title: z
+      .string()
+      .trim()
+      .min(1, "Must not be empty")
+      .refine(
+        (title) => [...title].length <= MAX_TITLE_LENGTH,
+        `Must be at most ${MAX_TITLE_LENGTH} characters`,
+      ),
     // Count code points to match PostgreSQL char_length.
     memo: z
       .string()
@@ -68,6 +83,7 @@ export type RecordDto = {
   kind: RecordRow["kind"];
   incomeType: RecordRow["incomeType"];
   amount: number;
+  title: string;
   memo: string;
 };
 
@@ -79,6 +95,7 @@ export function toRecordDto(row: RecordRow): RecordDto {
     kind: row.kind,
     incomeType: row.incomeType,
     amount: row.amount,
+    title: row.title,
     memo: row.memo,
   };
 }

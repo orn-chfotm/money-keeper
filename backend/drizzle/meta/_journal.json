@@ -8,6 +8,13 @@
       "when": 1792050265098,
       "tag": "0000_equal_ezekiel_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792074759874,
+      "tag": "0001_graceful_wilson_fisk",
+      "breakpoints": true
     }
   ]
 }

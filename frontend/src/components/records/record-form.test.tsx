@@ -9,6 +9,7 @@ const savedRecord: RecordDto = {
   kind: "income",
   incomeType: "salary",
   amount: 3000000,
+  title: "10월 급여",
   memo: "",
 };
 
@@ -26,6 +27,10 @@ function renderForm(onSaved = vi.fn()) {
 
 function setAmount(value: string) {
   fireEvent.change(screen.getByLabelText("금액(원)"), { target: { value } });
+}
+
+function setTitle(value: string) {
+  fireEvent.change(screen.getByLabelText("제목"), { target: { value } });
 }
 
 function submit() {
@@ -90,6 +95,50 @@ describe("RecordForm", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("prefills the given default date", () => {
+    renderForm();
+    expect((screen.getByLabelText("날짜") as HTMLInputElement).value).toBe("2026-10-15");
+  });
+
+  it("requires a title", () => {
+    renderForm();
+    setAmount("1000");
+    submit();
+    expect(screen.getByText("제목을 입력하세요.")).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a whitespace-only title", () => {
+    renderForm();
+    setAmount("1000");
+    setTitle("   ");
+    submit();
+    expect(screen.getByText("제목을 입력하세요.")).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a title longer than 50 characters", () => {
+    renderForm();
+    setAmount("1000");
+    setTitle("가".repeat(51));
+    submit();
+    expect(screen.getByText("제목은 50자 이하로 입력하세요.")).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("counts emoji as one character, so 50 emoji are allowed", async () => {
+    const onSaved = renderForm();
+    setAmount("1000");
+    const emojiTitle = "🍔".repeat(50);
+    setTitle(` ${emojiTitle} `);
+    expect(screen.getByText("50/50")).toBeTruthy();
+    submit();
+    await vi.waitFor(() => expect(onSaved).toHaveBeenCalled());
+    expect(screen.queryByText("제목은 50자 이하로 입력하세요.")).toBeNull();
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(init.body as string)).toMatchObject({ title: emojiTitle });
+  });
+
   it("shows income types only when 수입 is selected", () => {
     renderForm();
     expect(screen.queryByRole("radio", { name: "급여" })).toBeNull();
@@ -106,6 +155,7 @@ describe("RecordForm", () => {
     const onSaved = renderForm();
     fireEvent.click(screen.getByRole("radio", { name: "수입" }));
     setAmount("3000000");
+    setTitle("  10월 급여  ");
     submit();
     expect(screen.getByText("수입 종류(급여·기타)를 선택하세요.")).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -122,6 +172,7 @@ describe("RecordForm", () => {
       kind: "income",
       incomeType: "salary",
       amount: 3000000,
+      title: "10월 급여",
       memo: "",
     });
   });
@@ -129,6 +180,7 @@ describe("RecordForm", () => {
   it("sends incomeType null for non-income kinds", async () => {
     const onSaved = renderForm();
     setAmount("12000");
+    setTitle("점심");
     submit();
     await vi.waitFor(() => expect(onSaved).toHaveBeenCalled());
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -156,6 +208,7 @@ describe("RecordForm", () => {
     );
     const onSaved = renderForm();
     setAmount("1000");
+    setTitle("커피");
     submit();
     expect(await screen.findByText("입력값이 올바르지 않습니다.")).toBeTruthy();
     expect(screen.getByText("존재하지 않는 날짜입니다.")).toBeTruthy();

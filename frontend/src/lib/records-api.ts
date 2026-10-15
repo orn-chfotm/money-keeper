@@ -9,6 +9,8 @@ export type RecordDto = {
   kind: RecordKind;
   incomeType: IncomeType | null;
   amount: number;
+  // Required; the server trims it and allows 1-50 code points.
+  title: string;
   memo: string;
 };
 

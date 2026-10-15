@@ -1,0 +1,141 @@
+{
+  "id": "74305a32-e260-40f4-90b0-7495872ac6bf",
+  "prevId": "b319d752-913d-4125-9d37-73c70afd07a5",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.records": {
+      "name": "records",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "records_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "income_type": {
+          "name": "income_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "memo": {
+          "name": "memo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "records_date_idx": {
+          "name": "records_date_idx",
+          "columns": [
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "records_kind_check": {
+          "name": "records_kind_check",
+          "value": "\"records\".\"kind\" IN ('income', 'expense', 'saving')"
+        },
+        "records_income_type_check": {
+          "name": "records_income_type_check",
+          "value": "\"records\".\"income_type\" IS NULL OR \"records\".\"income_type\" IN ('salary', 'other')"
+        },
+        "records_income_type_kind_check": {
+          "name": "records_income_type_kind_check",
+          "value": "(\"records\".\"kind\" = 'income') = (\"records\".\"income_type\" IS NOT NULL)"
+        },
+        "records_amount_check": {
+          "name": "records_amount_check",
+          "value": "\"records\".\"amount\" > 0 AND \"records\".\"amount\" <= 999999999"
+        },
+        "records_memo_length_check": {
+          "name": "records_memo_length_check",
+          "value": "char_length(\"records\".\"memo\") <= 200"
+        },
+        "records_title_check": {
+          "name": "records_title_check",
+          "value": "btrim(\"records\".\"title\") <> '' AND char_length(\"records\".\"title\") <= 50"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

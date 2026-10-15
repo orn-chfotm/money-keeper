@@ -1,0 +1,2 @@
+ALTER TABLE "records" ADD COLUMN "title" text NOT NULL;--> statement-breakpoint
+ALTER TABLE "records" ADD CONSTRAINT "records_title_check" CHECK (btrim("records"."title") <> '' AND char_length("records"."title") <= 50);

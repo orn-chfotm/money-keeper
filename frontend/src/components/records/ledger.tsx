@@ -3,10 +3,10 @@
 import { useState, useSyncExternalStore } from "react";
 import { useRecords } from "@/hooks/use-records";
 import { monthOfDate, monthRange, todayKst, type YearMonth } from "@/lib/date";
-import { deleteRecord, type RecordDto } from "@/lib/records-api";
+import type { RecordDto } from "@/lib/records-api";
+import { CalendarGrid } from "./calendar-grid";
+import { DayDialog } from "./day-dialog";
 import { MonthNav } from "./month-nav";
-import { RecordForm } from "./record-form";
-import { RecordList } from "./record-list";
 
 const noopSubscribe = () => () => {};
 
@@ -21,68 +21,63 @@ export function Ledger() {
 
 function LedgerView({ today }: { today: string }) {
   const [month, setMonth] = useState<YearMonth>(() => monthOfDate(today));
-  const [editing, setEditing] = useState<RecordDto | null>(null);
-  const [formKey, setFormKey] = useState(0);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  // Remounts the dialog on every open so it always starts on the list view.
+  const [dialogSession, setDialogSession] = useState(0);
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const { from, to } = monthRange(month);
   const { records, error, isLoading, reload } = useRecords(from, to);
 
-  function closeForm() {
-    setEditing(null);
-    setFormKey((k) => k + 1);
+  function openDay(date: string) {
+    setSelectedDate(date);
+    setDialogSession((session) => session + 1);
+    setDialogOpen(true);
   }
 
-  function handleSaved() {
-    closeForm();
+  function changeMonth(next: YearMonth) {
+    setSavedNotice(null);
+    setMonth(next);
+  }
+
+  function handleSaved(record: RecordDto) {
+    setDialogOpen(false);
     reload();
-  }
-
-  async function handleDelete(record: RecordDto) {
-    setActionError(null);
-    try {
-      await deleteRecord(record.id);
-      if (editing?.id === record.id) closeForm();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "삭제하지 못했습니다.");
-    } finally {
-      reload();
-    }
+    // Stay on the month being viewed; only tell the user where the record went.
+    const saved = monthOfDate(record.date);
+    setSavedNotice(
+      saved.year === month.year && saved.month === month.month
+        ? null
+        : `${saved.month}월에 저장되었습니다`,
+    );
   }
 
   return (
-    <div className="grid gap-6">
-      <RecordForm
-        key={editing ? `edit-${editing.id}-${formKey}` : `new-${formKey}`}
-        record={editing ?? undefined}
-        defaultDate={today}
+    <section className="grid gap-4">
+      <MonthNav month={month} onChange={changeMonth} />
+      {savedNotice && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {savedNotice}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          기록을 불러오지 못했습니다: {error}
+        </p>
+      )}
+      {isLoading && records.length === 0 && (
+        <p className="text-sm text-muted-foreground">불러오는 중…</p>
+      )}
+      <CalendarGrid month={month} records={records} onSelectDate={openDay} />
+      <DayDialog
+        key={dialogSession}
+        open={dialogOpen}
+        date={selectedDate}
+        records={records.filter((record) => record.date === selectedDate)}
+        onOpenChange={setDialogOpen}
         onSaved={handleSaved}
-        onCancel={editing ? closeForm : undefined}
+        onDeleted={reload}
       />
-
-      <section className="grid gap-4">
-        <MonthNav month={month} onChange={setMonth} />
-        {actionError && (
-          <p role="alert" className="text-sm text-destructive">
-            {actionError}
-          </p>
-        )}
-        {error ? (
-          <p role="alert" className="text-sm text-destructive">
-            기록을 불러오지 못했습니다: {error}
-          </p>
-        ) : isLoading && records.length === 0 ? (
-          <p className="text-sm text-muted-foreground">불러오는 중…</p>
-        ) : (
-          <RecordList
-            records={records}
-            onEdit={(record) => {
-              setActionError(null);
-              setEditing(record);
-            }}
-            onDelete={handleDelete}
-          />
-        )}
-      </section>
-    </div>
+    </section>
   );
 }
