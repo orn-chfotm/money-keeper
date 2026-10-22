@@ -143,7 +143,7 @@ export function RecordForm({ record, defaultDate, onSaved, onCancel }: RecordFor
   // No Card wrapper: the form is rendered inside the day dialog, which provides the frame and title.
   return (
     <form className="grid gap-4" onSubmit={handleSubmit} noValidate>
-      <div className="grid gap-2">
+      <div className="grid gap-2.5 border-b pb-4">
         <Label htmlFor="record-date">날짜</Label>
         <Input
           id="record-date"
@@ -156,8 +156,8 @@ export function RecordForm({ record, defaultDate, onSaved, onCancel }: RecordFor
         <FieldError id="record-date-error" message={errors.date} />
       </div>
 
-      <fieldset className="grid gap-2">
-        <legend className="mb-2 text-sm font-medium">구분</legend>
+      <fieldset className="grid gap-2.5 border-b pb-4">
+        <legend className="mb-2.5 text-sm font-medium">구분</legend>
         <RadioGroup
           className="flex gap-4"
           value={values.kind}
@@ -173,8 +173,8 @@ export function RecordForm({ record, defaultDate, onSaved, onCancel }: RecordFor
       </fieldset>
 
       {values.kind === "income" && (
-        <fieldset className="grid gap-2">
-          <legend className="mb-2 text-sm font-medium">수입 종류</legend>
+        <fieldset className="grid gap-2.5 border-b pb-4">
+          <legend className="mb-2.5 text-sm font-medium">수입 종류</legend>
           <RadioGroup
             className="flex gap-4"
             value={values.incomeType}
@@ -195,7 +195,7 @@ export function RecordForm({ record, defaultDate, onSaved, onCancel }: RecordFor
         </fieldset>
       )}
 
-      <div className="grid gap-2">
+      <div className="grid gap-2.5 border-b pb-4">
         <Label htmlFor="record-title">제목</Label>
         <Input
           id="record-title"
@@ -211,7 +211,7 @@ export function RecordForm({ record, defaultDate, onSaved, onCancel }: RecordFor
         <FieldError id="record-title-error" message={errors.title} />
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-2.5 border-b pb-4">
         <Label htmlFor="record-amount">금액(원)</Label>
         <Input
           id="record-amount"
@@ -228,7 +228,7 @@ export function RecordForm({ record, defaultDate, onSaved, onCancel }: RecordFor
         <FieldError id="record-amount-error" message={errors.amount} />
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-2.5 border-b pb-4">
         <Label htmlFor="record-memo">메모</Label>
         <Input
           id="record-memo"
@@ -251,15 +251,19 @@ export function RecordForm({ record, defaultDate, onSaved, onCancel }: RecordFor
         </div>
       )}
 
-      <div className="flex gap-2">
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "저장 중…" : "저장"}
-        </Button>
+      <div className="flex justify-between gap-2">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
             취소
           </Button>
         )}
+        <Button
+          type="submit"
+          disabled={submitting}
+          className="ml-auto bg-brand text-white hover:bg-brand-hover"
+        >
+          {submitting ? "저장 중…" : "저장"}
+        </Button>
       </div>
     </form>
   );
