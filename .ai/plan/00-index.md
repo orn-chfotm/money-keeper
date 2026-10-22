@@ -16,6 +16,9 @@ description: "구현 계획(plan) 문서의 목적, 파일 명명 규칙, 목록
 
 - `2026-10-15-01-stage2-calendar-title.md`: 2단계 보완 — 월 달력 화면과 기록 제목(title) 추가 (승인)
 - `2026-10-22-01-header-wallet-icon.md`: 상단 Wallet 아이콘 + favicon 교체 (승인)
+- `2026-10-22-02-calendar-day-panel.md`: 달력 하단 날짜 상세 영역 + 구분별 건수 + 주말·선택 색 (승인)
+- `2026-10-22-03-register-button-selection-colors.md`: 등록 버튼 파랑 + 선택 칸·오늘 앰버 (승인)
+- `2026-10-22-04-form-spacing-brand-color.md`: 브랜드 색 토큰 + 입력 폼 간격·구분선·버튼 배치 (승인)
 
 ## [금지사항]
 - 금지사항을 위반한 소스는 반드시 수정하고 재검증한다. 위반 상태의 구현과 금지 예시는 실제 소스 및 최종 반영 대상에 포함하지 않는다.
