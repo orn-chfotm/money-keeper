@@ -18,15 +18,15 @@ export const KIND_SHORT_LABELS: Record<RecordKind, string> = {
   saving: "저",
 };
 
-// Kind colors: income green, expense red, saving blue.
+// Kind colors: income green, expense red, saving violet (blue is the Saturday color).
 export const KIND_TEXT_CLASSES: Record<RecordKind, string> = {
   income: "text-green-700 dark:text-green-400",
   expense: "text-red-600 dark:text-red-400",
-  saving: "text-blue-600 dark:text-blue-400",
+  saving: "text-violet-600 dark:text-violet-400",
 };
 
 export const KIND_BADGE_CLASSES: Record<RecordKind, string> = {
   income: "bg-green-600 text-white",
   expense: "bg-red-600 text-white",
-  saving: "bg-blue-600 text-white",
+  saving: "bg-violet-600 text-white",
 };
